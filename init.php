@@ -21,7 +21,6 @@ function eepos_events_register_post_type() {
 		'menu_icon'     => 'dashicons-calendar',
 		'menu_position' => 5,
 		'public'        => true,
-		'rewrite'       => [ 'slug' => 'event' ],
 		'has_archive'   => true
 	] );
 }
@@ -32,8 +31,7 @@ function eepos_events_register_taxonomy() {
 		'label'             => 'Tapahtumakategoriat',
 		'show_ui'           => true,
 		'show_admin_column' => true,
-		'query_var'         => true,
-		'rewrite'           => [ 'slug' => 'eepos-event-categories' ]
+		'query_var'         => true
 	] );
 }
 
