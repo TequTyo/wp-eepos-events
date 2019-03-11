@@ -1,0 +1,1 @@
+Hi: "<?= get_post_type_archive_link('eepos_event') ?>"

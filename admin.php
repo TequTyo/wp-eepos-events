@@ -1,33 +1,5 @@
 <?php
 
-function eepos_events_start_session() {
-	session_start();
-}
-
-function eepos_events_register_post_type() {
-	register_post_type( 'eepos_event', [
-		'label'         => 'Eepos-tapahtumat',
-		'menu_icon'     => 'dashicons-calendar',
-		'menu_position' => 5,
-		'public'        => true,
-	] );
-}
-
-function eepos_events_register_taxonomy() {
-	register_taxonomy( 'eepos_event_categories', [ 'eepos_event' ], [
-		'hierarchial'       => true,
-		'label'             => 'Tapahtumakategoriat',
-		'show_ui'           => true,
-		'show_admin_column' => true,
-		'query_var'         => true,
-		'rewrite'           => [ 'slug' => 'eepos-event-categories' ]
-	] );
-}
-
-add_action( 'init', 'eepos_events_start_session', 1 );
-add_action( 'init', 'eepos_events_register_post_type' );
-add_action( 'init', 'eepos_events_register_taxonomy' );
-
 function eepos_events_define_event_list_columns() {
 	return [
 		'cb'             => '<input type="checkbox">',
@@ -97,23 +69,25 @@ function eepos_events_import_page() {
 	$eeposUrl = esc_attr( $eeposUrl );
 
 	?>
-	<h1>Tuo tapahtumat Eepoksesta</h1>
+	<div class="wrap">
+		<h1>Tuo tapahtumat Eepoksesta</h1>
 
-	<form action="<?= $formAction ?>" method="post">
-		<input type="hidden" name="action" value="eepos_events_import">
-		<table class="form-table">
-			<tr>
-				<th>Eepoksen osoite</th>
-				<td>
-					<input type="text" name="eepos_url" placeholder="demo.eepos.fi" class="regular-text"
-					       value="<?= $eeposUrl ?>">
-				</td>
-			</tr>
-		</table>
-		<p class="submit">
-			<input class="button button-primary" type="submit" value="Tuo tapahtumat">
-		</p>
-	</form>
+		<form action="<?= $formAction ?>" method="post">
+			<input type="hidden" name="action" value="eepos_events_import">
+			<table class="form-table">
+				<tr>
+					<th>Eepoksen osoite</th>
+					<td>
+						<input type="text" name="eepos_url" placeholder="demo.eepos.fi" class="regular-text"
+						       value="<?= $eeposUrl ?>">
+					</td>
+				</tr>
+			</table>
+			<p class="submit">
+				<input class="button button-primary" type="submit" value="Tuo tapahtumat">
+			</p>
+		</form>
+	</div>
 	<?php
 }
 
