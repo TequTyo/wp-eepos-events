@@ -27,7 +27,7 @@ function eepos_events_register_post_type() {
 }
 
 function eepos_events_register_taxonomy() {
-	register_taxonomy( 'eepos_event_categories', [ 'eepos_event' ], [
+	register_taxonomy( 'eepos_event_category', [ 'eepos_event' ], [
 		'hierarchial'       => true,
 		'label'             => 'Tapahtumakategoriat',
 		'show_ui'           => true,

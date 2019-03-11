@@ -152,20 +152,22 @@ function eepos_events_import_action() {
 			'ID' => $existingPostId,
 			'post_type' => 'eepos_event',
 			'post_title' => $event->name,
-			'post_description' => $event->description
+			'post_description' => $event->description,
+			'post_status' => 'publish'
 		]);
 
 		$catName = $event->category_name;
 		if ($catName) {
-			wp_insert_term($catName, 'eepos_event_categories');
+			wp_insert_term($catName, 'eepos_event_category');
+			wp_set_post_terms($postId, [$catName], 'eepos_event_category');
 		}
 
-		add_post_meta($postId, 'event_start_date', $event->start_date, true);
-		add_post_meta($postId, 'event_end_date', $event->end_date, true);
-		add_post_meta($postId, 'event_start_time', $event->start_time, true);
-		add_post_meta($postId, 'event_end_time', $event->end_time, true);
-		add_post_meta($postId, 'instances', json_encode($event->instances), true);
-		add_post_meta($postId, 'organizers', json_encode($event->organizers), true);
+		update_post_meta($postId, 'event_start_date', $event->start_date);
+		update_post_meta($postId, 'event_end_date', $event->end_date);
+		update_post_meta($postId, 'event_start_time', $event->start_time);
+		update_post_meta($postId, 'event_end_time', $event->end_time);
+		update_post_meta($postId, 'instances', json_encode($event->instances));
+		update_post_meta($postId, 'organizers', json_encode($event->organizers));
 
 		$wpdb->query("REPLACE INTO {$wpdb->eepos_events->log} (event_id, post_id) VALUES ({$sanitizedId}, {$postId})");
 	}
