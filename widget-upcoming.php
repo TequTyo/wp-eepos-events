@@ -27,10 +27,10 @@ class EeposEventsUpcomingWidget extends WP_Widget {
 		$args = wp_parse_args( $instance, $defaults );
 
 		$catQuery = "
-			SELECT wp_terms.term_id, wp_terms.name FROM wp_terms
-			INNER JOIN wp_term_taxonomy ON wp_term_taxonomy.term_id = wp_terms.term_id
-			WHERE wp_term_taxonomy.taxonomy = 'eepos_event_category'
-			GROUP BY wp_terms.term_id
+			SELECT {$wpdb->terms}.term_id, {$wpdb->terms}.name FROM {$wpdb->terms}
+			INNER JOIN {$wpdb->term_taxonomy} ON {$wpdb->term_taxonomy}.term_id = {$wpdb->terms}.term_id
+			WHERE {$wpdb->term_taxonomy}.taxonomy = 'eepos_event_category'
+			GROUP BY {$wpdb->terms}.term_id
 		";
 		$catRows  = $wpdb->get_results( $catQuery );
 		array_unshift( $catRows, (object) [ 'term_id' => 0, 'name' => 'Kaikki' ] );
@@ -97,17 +97,17 @@ class EeposEventsUpcomingWidget extends WP_Widget {
 		$values = $termId ? [ $termId, $count ] : [ $count ];
 
 		$query = $wpdb->prepare( "
-			SELECT wp_posts.ID FROM wp_posts
-			INNER JOIN wp_postmeta AS startDateMeta ON startDateMeta.post_id = wp_posts.id AND startDateMeta.meta_key = 'event_start_date'
-			INNER JOIN wp_postmeta AS startTimeMeta ON startTimeMeta.post_id = wp_posts.id AND startTimeMeta.meta_key = 'event_start_time'
-			LEFT JOIN wp_term_relationships ON wp_term_relationships.object_id = wp_posts.id
-			LEFT JOIN wp_term_taxonomy ON wp_term_taxonomy.term_taxonomy_id = wp_term_relationships.term_taxonomy_id
-			LEFT JOIN wp_terms ON wp_terms.term_id = wp_term_taxonomy.term_id
-			WHERE wp_posts.post_type = 'eepos_event'
-			AND wp_posts.post_status = 'publish'
+			SELECT {$wpdb->posts}.ID FROM {$wpdb->posts}
+			INNER JOIN {$wpdb->postmeta} AS startDateMeta ON startDateMeta.post_id = {$wpdb->posts}.id AND startDateMeta.meta_key = 'event_start_date'
+			INNER JOIN {$wpdb->postmeta} AS startTimeMeta ON startTimeMeta.post_id = {$wpdb->posts}.id AND startTimeMeta.meta_key = 'event_start_time'
+			LEFT JOIN {$wpdb->term_relationships} ON {$wpdb->term_relationships}.object_id = {$wpdb->posts}.id
+			LEFT JOIN {$wpdb->term_taxonomy} ON {$wpdb->term_taxonomy}.term_taxonomy_id = {$wpdb->term_relationships}.term_taxonomy_id
+			LEFT JOIN {$wpdb->terms} ON {$wpdb->terms}.term_id = {$wpdb->term_taxonomy}.term_id
+			WHERE {$wpdb->posts}.post_type = 'eepos_event'
+			AND {$wpdb->posts}.post_status = 'publish'
 			AND startDateMeta.meta_value >= CURDATE()
-			" . ( $termId ? "AND wp_terms.term_id = %d" : "" ) . "
-			GROUP BY wp_posts.ID
+			" . ( $termId ? "AND {$wpdb->terms}.term_id = %d" : "" ) . "
+			GROUP BY {$wpdb->posts}.ID
 			ORDER BY startDateMeta.meta_value ASC, startTimeMeta.meta_value ASC
 			LIMIT %d
 		", $values );

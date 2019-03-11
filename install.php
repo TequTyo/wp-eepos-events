@@ -11,7 +11,7 @@ function eepos_events_install() {
 			`post_id` BIGINT(10) UNSIGNED NOT NULL,
 			PRIMARY KEY (`event_id`),
 			INDEX `fk_posts` (`post_id`),
-			CONSTRAINT `fk_posts` FOREIGN KEY (`post_id`) REFERENCES `wp_posts` (`ID`) ON UPDATE CASCADE ON DELETE CASCADE
+			CONSTRAINT `fk_posts` FOREIGN KEY (`post_id`) REFERENCES `{$wpdb->prefix}posts` (`ID`) ON UPDATE CASCADE ON DELETE CASCADE
 		) COLLATE='utf8mb4_swedish_ci'
     ";
 
