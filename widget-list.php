@@ -76,24 +76,23 @@ class EeposEventsListWidget extends WP_Widget {
 		return $instance;
 	}
 
-	protected function getListEventPostIds( $count, $termId = null ) {
+	protected function getListEventPostIds( $termId = null ) {
 		global $wpdb;
-
-		$values = $termId ? [ $termId, $count ] : [ $count ];
 
 		$query = $wpdb->prepare( "
 			SELECT wp_posts.ID FROM wp_posts
 			INNER JOIN wp_postmeta AS startDateMeta ON startDateMeta.post_id = wp_posts.id AND startDateMeta.meta_key = 'event_start_date'
+			INNER JOIN wp_postmeta AS startTimeMeta ON startTimeMeta.post_id = wp_posts.id AND startTimeMeta.meta_key = 'event_start_time'
 			LEFT JOIN wp_term_relationships ON wp_term_relationships.object_id = wp_posts.id
 			LEFT JOIN wp_term_taxonomy ON wp_term_taxonomy.term_taxonomy_id = wp_term_relationships.term_taxonomy_id
 			LEFT JOIN wp_terms ON wp_terms.term_id = wp_term_taxonomy.term_id
 			WHERE wp_posts.post_type = 'eepos_event'
+			AND wp_posts.post_status = 'publish'
 			AND startDateMeta.meta_value >= DATE_SUB(CURDATE(), INTERVAL 2 WEEK)
 			" . ( $termId ? "AND wp_terms.term_id = %d" : "" ) . "
 			GROUP BY wp_posts.ID
-			ORDER BY startDateMeta.meta_value ASC
-			LIMIT %d
-		", $values );
+			ORDER BY startDateMeta.meta_value ASC, startTimeMeta.meta_value ASC
+		", $termId ? [$termId] : [] );
 		$posts = $wpdb->get_results( $query );
 
 		return array_map( function ( $p ) {
@@ -103,10 +102,9 @@ class EeposEventsListWidget extends WP_Widget {
 
 	public function widget( $args, $instance ) {
 		$title              = apply_filters( 'widget_title', $instance['title'] ?? '' );
-		$count              = intval( $instance['count'] ?? 5 );
 		$restrictToCategory = $instance['restrict_to_category'] ?? 0;
 
-		$listEventPostIds = $this->getListEventPostIds( $count, $restrictToCategory );
+		$listEventPostIds = $this->getListEventPostIds( $restrictToCategory );
 		$posts            = count( $listEventPostIds )
 			? get_posts( [
 				'include'   => $listEventPostIds,
@@ -118,8 +116,16 @@ class EeposEventsListWidget extends WP_Widget {
 			$post->meta = get_post_meta( $post->ID );
 		}
 
+		usort($posts, function($a, $b) {
+			$aKey = "{$a->meta['event_start_date'][0]} {$a->meta['event_start_time'][0]}";
+			$bKey = "{$b->meta['event_start_date'][0]} {$b->meta['event_start_time'][0]}";
+			if ($aKey > $bKey) return 1;
+			if ($aKey < $bKey) return -1;
+			return 0;
+		});
+
 		$postsGroupedByMonth = array_reduce( $posts, function ( $map, $post ) {
-			$eventDate     = new DateTime( $post->meta['event'] );
+			$eventDate     = new DateTime( $post->meta['event_start_date'][0] );
 			$key           = $eventDate->format( 'Y-m' );
 			$map[ $key ]   = $map[ $key ] ?? [];
 			$map[ $key ][] = $post;
@@ -154,18 +160,26 @@ class EeposEventsListWidget extends WP_Widget {
 						<?php
 						foreach ( $posts as $post ) {
 							$meta      = get_post_meta( $post->ID );
-							$startDate = strtotime( $meta['event_start_date'][0] );
-							$formattedStartDate = date_i18n( 'D d.n. \k\l\o G.i', $startDate );
+
+							$startDate = new DateTime($meta['event_start_date'][0]);
+							$formattedStartDate = date_i18n( 'D j.n.', $startDate->format('U') );
+
+							$startTime = DateTime::createFromFormat('H:i:s', $meta['event_start_time'][0]);
+							$formattedStartTime = date_i18n( 'G.i', $startTime->format('U') );
+
 							$content = apply_filters('the_content', $post->post_content);
 							$content = str_replace(']]>', ']]&gt;', $content);
 
 							?>
 							<li class="event">
 								<a href="javascript:void(0)" class="event-header eepos-events-list-widget-event-header">
-									<h4>
-										<span class="event-date"><?= $formattedStartDate ?></span>
-										<span class="event-title"><?= esc_html( $post->post_title ) ?></span>
-									</h4>
+									<h4><?= esc_html( $post->post_title ) ?></h4>
+									<span class="extra">
+										<?= $formattedStartDate ?>
+										<?php if ($formattedStartTime !== '0.00') { ?>
+											klo <?= $formattedStartTime ?>
+										<?php } ?>
+									</span>
 								</a>
 								<div class="event-info">
 									<div class="description">

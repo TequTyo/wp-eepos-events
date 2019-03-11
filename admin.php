@@ -96,6 +96,8 @@ function eepos_events_import_action() {
 		$exit( null, 'Virheellinen Eepoksen osoite' );
 	}
 
+	update_option( 'eepos_events_eepos_url', $eeposUrl );
+
 	$ch = curl_init();
 	curl_setopt( $ch, CURLOPT_URL, "https://{$eeposUrl}/ext/api/events" );
 	curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );

@@ -99,14 +99,16 @@ class EeposEventsUpcomingWidget extends WP_Widget {
 		$query = $wpdb->prepare( "
 			SELECT wp_posts.ID FROM wp_posts
 			INNER JOIN wp_postmeta AS startDateMeta ON startDateMeta.post_id = wp_posts.id AND startDateMeta.meta_key = 'event_start_date'
+			INNER JOIN wp_postmeta AS startTimeMeta ON startTimeMeta.post_id = wp_posts.id AND startTimeMeta.meta_key = 'event_start_time'
 			LEFT JOIN wp_term_relationships ON wp_term_relationships.object_id = wp_posts.id
 			LEFT JOIN wp_term_taxonomy ON wp_term_taxonomy.term_taxonomy_id = wp_term_relationships.term_taxonomy_id
 			LEFT JOIN wp_terms ON wp_terms.term_id = wp_term_taxonomy.term_id
 			WHERE wp_posts.post_type = 'eepos_event'
+			AND wp_posts.post_status = 'publish'
 			AND startDateMeta.meta_value >= CURDATE()
 			" . ( $termId ? "AND wp_terms.term_id = %d" : "" ) . "
 			GROUP BY wp_posts.ID
-			ORDER BY startDateMeta.meta_value ASC
+			ORDER BY startDateMeta.meta_value ASC, startTimeMeta.meta_value ASC
 			LIMIT %d
 		", $values );
 		$posts = $wpdb->get_results( $query );
@@ -146,11 +148,21 @@ class EeposEventsUpcomingWidget extends WP_Widget {
 					<?php
 					foreach ( $posts as $post ) {
 						$meta      = get_post_meta( $post->ID );
-						$startDate = strtotime( $meta['event_start_date'][0] );
+
+						$startDate = new DateTime($meta['event_start_date'][0]);
+						$formattedStartDate = date_i18n( 'D j.n.', $startDate->format('U') );
+
+						$startTime = DateTime::createFromFormat('H:i:s', $meta['event_start_time'][0]);
+						$formattedStartTime = date_i18n( 'G.i', $startTime->format('U') );
 
 						?>
 						<li class="event">
-							<div class="event-date"><?= date_i18n( 'D d.n. \k\l\o G.i', $startDate ) ?></div>
+							<div class="event-date">
+								<?= $formattedStartDate ?>
+								<?php if ($formattedStartTime !== '0.00') { ?>
+									klo <?= $formattedStartTime ?>
+								<?php } ?>
+							</div>
 							<div class="event-title"><?= esc_html( $post->post_title ) ?></div>
 						</li>
 					<?php } ?>
