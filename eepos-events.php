@@ -9,6 +9,9 @@ require_once( __DIR__ . '/init.php' );
 // Install
 require_once( __DIR__ . '/install.php' );
 
+// Import fn
+require_once( __DIR__ . '/import.php' );
+
 // Admin panel
 if (is_admin()) {
 	require_once( __DIR__ . '/admin.php' );

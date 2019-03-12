@@ -9,8 +9,7 @@ function eepos_events_install() {
 		CREATE TABLE {$wpdb->eepos_events->log} (
 			`event_id` INT(10) UNSIGNED NOT NULL,
 			`post_id` BIGINT(10) UNSIGNED NOT NULL,
-			PRIMARY KEY (`event_id`),
-			INDEX `fk_posts` (`post_id`)
+			PRIMARY KEY (`event_id`)
 		) COLLATE='utf8mb4_swedish_ci'
     ";
 
@@ -20,8 +19,8 @@ function eepos_events_install() {
 	$wpdb->query("
 		ALTER TABLE {$wpdb->eepos_events->log}
 		ADD CONSTRAINT `fk_posts`
-		  FOREIGN KEY (`post_id`) REFERENCES `wp_posts` (`ID`)
-		    ON UPDATE CASCADE
-		    ON DELETE CASCADE
+			FOREIGN KEY (`post_id`) REFERENCES `wp_posts` (`ID`)
+				ON UPDATE CASCADE
+				ON DELETE CASCADE
 	");
 }

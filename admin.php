@@ -50,6 +50,14 @@ function eepos_events_import_page() {
 	$eeposUrl = get_option( 'eepos_events_eepos_url', '' );
 	$eeposUrl = esc_attr( $eeposUrl );
 
+	$importKey = get_option('eepos_events_import_key', null);
+	if (!$importKey) {
+		$importKey = bin2hex(openssl_random_pseudo_bytes(16));
+		update_option('eepos_events_import_key', $importKey);
+	}
+
+	$importUrl = get_site_url() . '/eepos-events/actions/import?key=' . $importKey;
+
 	?>
 	<div class="wrap">
 		<h1>Tuo tapahtumat Eepoksesta</h1>
@@ -58,10 +66,10 @@ function eepos_events_import_page() {
 			<input type="hidden" name="action" value="eepos_events_import">
 			<table class="form-table">
 				<tr>
-					<th>Eepoksen osoite</th>
+					<th>Eepoksen osoite)</th>
 					<td>
-						<input type="text" name="eepos_url" placeholder="demo.eepos.fi" class="regular-text"
-						       value="<?= $eeposUrl ?>">
+						<input type="text" name="eepos_url" class="regular-text" value="<?= $eeposUrl ?>"><br>
+						Esim. <strong>demo.eepos.fi</strong>
 					</td>
 				</tr>
 			</table>
@@ -69,13 +77,23 @@ function eepos_events_import_page() {
 				<input class="button button-primary" type="submit" value="Tuo tapahtumat">
 			</p>
 		</form>
+
+		<h2>Tuo automaattisesti</h2>
+		<p>
+			Kopioi seuraava osoite Eepoksen integraatiosivun kohtaan "Tapahtumien päivitysosoite".<br>
+			<strong>Huom!</strong> Tapahtumat on tuotava ensin kerran manuaalisesti yltä.
+			<br><br>
+			<input type="text"
+			       class="regular-text"
+			       style="width: 800px; max-width: 100%"
+			       readonly
+			       value="<?= esc_attr($importUrl) ?>">
+		</p>
 	</div>
 	<?php
 }
 
 function eepos_events_import_action() {
-	global $wpdb;
-
 	eepos_events_add_import_menu_item();
 
 	$exit = function ( $success = null, $err = null ) {
@@ -91,71 +109,14 @@ function eepos_events_import_action() {
 	};
 
 	$eeposUrl = $_POST['eepos_url'];
-	$match    = preg_match( '/^[a-zA-Z0-9\-]+\.eepos\.fi$/', $eeposUrl );
-	if ( $match !== 1 ) {
-		$exit( null, 'Virheellinen Eepoksen osoite' );
+
+	try {
+		eepos_events_import( $eeposUrl );
+	} catch (EeposEventsImportException $e) {
+		$exit( null, $e->getMessage() );
 	}
 
 	update_option( 'eepos_events_eepos_url', $eeposUrl );
-
-	$ch = curl_init();
-	curl_setopt( $ch, CURLOPT_URL, "https://{$eeposUrl}/ext/api/events" );
-	curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
-	$data  = curl_exec( $ch );
-	$errno = curl_errno( $ch );
-	$err   = curl_error( $ch );
-	curl_close( $ch );
-
-	if ( $errno !== 0 ) {
-		$exit( null, 'Virhe tietoja haettaessa: ' . $err );
-	}
-
-	$parsed = json_decode( $data );
-	if ( $parsed === false ) {
-		$exit( null, 'Virhe tietoja haettaessa: tieto on väärässä formaatissa' );
-	}
-
-	if ( $parsed->error ) {
-		$exit( null, 'Virhe tietoja haettaessa: ' . $parsed->error );
-	}
-
-	foreach ($parsed as $event) {
-		// If this event has already been imported, update it - unless it's been modified on WP's side
-		$sanitizedId = intval($event->id);
-		$existingEvent = $wpdb->get_row("SELECT * FROM {$wpdb->eepos_events->log} WHERE event_id={$sanitizedId}");
-		$existingPostId = 0;
-		if ($existingEvent) {
-			$post = get_post($existingEvent->post_id);
-			if ($post) {
-				$existingPostId = $post->ID;
-				if ($post->post_modified !== $post->post_date) continue; // Modified, skip
-			}
-		}
-
-		$postId = wp_insert_post([
-			'ID' => $existingPostId,
-			'post_type' => 'eepos_event',
-			'post_title' => $event->name,
-			'post_content' => $event->description,
-			'post_status' => 'publish'
-		]);
-
-		$catName = $event->category_name;
-		if ($catName) {
-			wp_insert_term($catName, 'eepos_event_category');
-			wp_set_post_terms($postId, [$catName], 'eepos_event_category');
-		}
-
-		update_post_meta($postId, 'event_start_date', $event->start_date);
-		update_post_meta($postId, 'event_end_date', $event->end_date);
-		update_post_meta($postId, 'event_start_time', $event->start_time);
-		update_post_meta($postId, 'event_end_time', $event->end_time);
-		update_post_meta($postId, 'instances', json_encode($event->instances));
-		update_post_meta($postId, 'organizers', json_encode($event->organizers));
-
-		$wpdb->query("REPLACE INTO {$wpdb->eepos_events->log} (event_id, post_id) VALUES ({$sanitizedId}, {$postId})");
-	}
-
 	$exit( 'Tapahtumat haettu!' );
 }
 
