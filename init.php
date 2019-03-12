@@ -5,7 +5,7 @@ function eepos_events_init() {
 
 	// Tables
 	$wpdb->eepos_events = (object) [
-		'log' => 'eepos_events_log',
+		'log' => $wpdb->prefix . 'eepos_events_log',
 	];
 }
 
@@ -21,19 +21,17 @@ function eepos_events_register_post_type() {
 		'menu_icon'     => 'dashicons-calendar',
 		'menu_position' => 5,
 		'public'        => true,
-		'rewrite'       => [ 'slug' => 'event' ],
 		'has_archive'   => true
 	] );
 }
 
 function eepos_events_register_taxonomy() {
-	register_taxonomy( 'eepos_event_categories', [ 'eepos_event' ], [
+	register_taxonomy( 'eepos_event_category', [ 'eepos_event' ], [
 		'hierarchial'       => true,
 		'label'             => 'Tapahtumakategoriat',
 		'show_ui'           => true,
 		'show_admin_column' => true,
-		'query_var'         => true,
-		'rewrite'           => [ 'slug' => 'eepos-event-categories' ]
+		'query_var'         => true
 	] );
 }
 

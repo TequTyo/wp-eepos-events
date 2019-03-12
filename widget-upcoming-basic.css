@@ -1,0 +1,13 @@
+.eepos-events-upcoming-widget.with-default-styles .event-list {
+    list-style: none;
+    padding: 0;
+}
+
+.eepos-events-upcoming-widget.with-default-styles .event-date {
+    font-weight: bold;
+}
+
+.eepos-events-upcoming-widget.with-default-styles .event-date,
+.eepos-events-upcoming-widget.with-default-styles .event-title {
+    display: inline;
+}

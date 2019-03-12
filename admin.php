@@ -3,10 +3,9 @@
 function eepos_events_define_event_list_columns() {
 	return [
 		'cb'             => '<input type="checkbox">',
-		'event_category' => 'Kategoria',
 		'title'          => 'Tapahtuman nimi',
-		'event_date'     => 'Pvm',
-		'event_time'     => 'Klo'
+		'event_category' => 'Kategoria',
+		'event_date'     => 'Pvm'
 	];
 }
 
@@ -14,43 +13,26 @@ add_filter( 'manage_eepos_event_posts_columns', 'eepos_events_define_event_list_
 
 function eepos_events_get_event_list_column_values( $column, $post_id ) {
 	if ( $column === 'event_category' ) {
-		$tx = get_post_taxonomies( $post_id );
-		wp_get_post_terms( $post_id, '' );
-		echo var_export( $tx, true );
+		$terms = wp_get_post_terms( $post_id, 'eepos_event_category' );
+		echo implode(', ', array_map(function($term) { return $term->name; }, $terms));
 	} else if ( $column === 'event_date' ) {
 		$startDate   = get_post_meta( $post_id, 'event_start_date', true );
-		$endDate     = get_post_meta( $post_id, 'event_end_date', true );
 		$currentYear = date( 'Y' );
 
 		if ( $startDate ) {
 			$startDateDT = new DateTime( $startDate );
 			if ( $startDateDT->format( 'Y' ) === $currentYear ) {
-				$startDateFormatted = $startDateDT->format( 'd.n.' );
+				$startDateFormatted = $startDateDT->format( 'd.n. \k\l\o G.i' );
 			} else {
-				$startDateFormatted = $startDateDT->format( 'd.n.Y' );
+				$startDateFormatted = $startDateDT->format( 'd.n.Y \k\l\o G.i' );
 			}
 		} else {
 			$startDateFormatted = null;
 		}
 
-		if ( $endDate ) {
-			$endDateDT = new DateTime( $endDate );
-			if ( $endDateDT->format( 'Y' ) === $currentYear ) {
-				$endDateFormatted = $endDateDT->format( 'd.n.' );
-			} else {
-				$endDateFormatted = $endDateDT->format( 'd.n.Y' );
-			}
-		} else {
-			$endDateFormatted = null;
-		}
-
-		if ( $startDate === $endDate ) {
-			echo $startDateFormatted;
-		} else {
-			echo "{$startDateFormatted}-{$endDateFormatted}";
-		}
+		echo $startDateFormatted;
 	} else {
-		echo 'haHAA';
+		echo '-';
 	}
 }
 
@@ -114,6 +96,8 @@ function eepos_events_import_action() {
 		$exit( null, 'Virheellinen Eepoksen osoite' );
 	}
 
+	update_option( 'eepos_events_eepos_url', $eeposUrl );
+
 	$ch = curl_init();
 	curl_setopt( $ch, CURLOPT_URL, "https://{$eeposUrl}/ext/api/events" );
 	curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
@@ -152,20 +136,22 @@ function eepos_events_import_action() {
 			'ID' => $existingPostId,
 			'post_type' => 'eepos_event',
 			'post_title' => $event->name,
-			'post_description' => $event->description
+			'post_content' => $event->description,
+			'post_status' => 'publish'
 		]);
 
 		$catName = $event->category_name;
 		if ($catName) {
-			wp_insert_term($catName, 'eepos_event_categories');
+			wp_insert_term($catName, 'eepos_event_category');
+			wp_set_post_terms($postId, [$catName], 'eepos_event_category');
 		}
 
-		add_post_meta($postId, 'event_start_date', $event->start_date, true);
-		add_post_meta($postId, 'event_end_date', $event->end_date, true);
-		add_post_meta($postId, 'event_start_time', $event->start_time, true);
-		add_post_meta($postId, 'event_end_time', $event->end_time, true);
-		add_post_meta($postId, 'instances', json_encode($event->instances), true);
-		add_post_meta($postId, 'organizers', json_encode($event->organizers), true);
+		update_post_meta($postId, 'event_start_date', $event->start_date);
+		update_post_meta($postId, 'event_end_date', $event->end_date);
+		update_post_meta($postId, 'event_start_time', $event->start_time);
+		update_post_meta($postId, 'event_end_time', $event->end_time);
+		update_post_meta($postId, 'instances', json_encode($event->instances));
+		update_post_meta($postId, 'organizers', json_encode($event->organizers));
 
 		$wpdb->query("REPLACE INTO {$wpdb->eepos_events->log} (event_id, post_id) VALUES ({$sanitizedId}, {$postId})");
 	}

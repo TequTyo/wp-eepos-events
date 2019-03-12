@@ -17,8 +17,9 @@ if (is_admin()) {
 // Public
 require_once( __DIR__ . '/public.php' );
 
-// Widget
-require_once( __DIR__ . '/EeposEventsWidget.php' );
+// Widgets
+require_once( __DIR__ . '/widget-upcoming.php' );
+require_once( __DIR__ . '/widget-list.php' );
 
 // Actions/custom endpoints
 require_once( __DIR__ . '/actions.php' );
