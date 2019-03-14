@@ -120,7 +120,7 @@ class EeposEventsUpcomingWidget extends WP_Widget {
 
 	public function widget( $args, $instance ) {
 		$title              = apply_filters( 'widget_title', $instance['title'] ?? '' );
-		$count              = intval( $instance['count'] ?? 5 );
+		$count              = intval( $instance['event_count'] ?? 5 );
 		$restrictToCategory = $instance['restrict_to_category'] ?? 0;
 
 		$upcomingEventPostIds = $this->getUpcomingEventPostIds( $count, $restrictToCategory );
