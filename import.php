@@ -34,7 +34,7 @@ function eepos_events_import($eeposUrl) {
 	foreach ($parsed as $event) {
 		// If this event has already been imported, update it - unless it's been modified on WP's side
 		$sanitizedId = intval($event->id);
-		$existingEvent = $wpdb->get_row("SELECT * FROM {$wpdb->eepos_events->log} WHERE event_id={$sanitizedId}");
+		$existingEvent = $wpdb->get_row("SELECT * FROM {$wpdb->eepos_events_log} WHERE event_id={$sanitizedId}");
 		$existingPostId = 0;
 		if ($existingEvent) {
 			$post = get_post($existingEvent->post_id);
@@ -67,6 +67,6 @@ function eepos_events_import($eeposUrl) {
 		update_post_meta($postId, 'instances', json_encode($event->instances));
 		update_post_meta($postId, 'organizers', json_encode($event->organizers));
 
-		$wpdb->query("REPLACE INTO {$wpdb->eepos_events->log} (event_id, post_id) VALUES ({$sanitizedId}, {$postId})");
+		$wpdb->query("REPLACE INTO {$wpdb->eepos_events_log} (event_id, post_id) VALUES ({$sanitizedId}, {$postId})");
 	}
 }

@@ -4,9 +4,7 @@ function eepos_events_init() {
 	global $wpdb;
 
 	// Tables
-	$wpdb->eepos_events = (object) [
-		'log' => $wpdb->prefix . 'eepos_events_log',
-	];
+	$wpdb->eepos_events_log = $wpdb->prefix . 'eepos_events_log';
 }
 
 add_action( 'plugins_loaded', 'eepos_events_init' );

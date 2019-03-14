@@ -6,7 +6,7 @@ function eepos_events_install() {
 	eepos_events_init();
 
 	$logTableSql = "
-		CREATE TABLE {$wpdb->eepos_events->log} (
+		CREATE TABLE {$wpdb->eepos_events_log} (
 			`event_id` INT(10) UNSIGNED NOT NULL,
 			`post_id` BIGINT(10) UNSIGNED NOT NULL,
 			PRIMARY KEY (`event_id`)
@@ -17,7 +17,7 @@ function eepos_events_install() {
 	dbDelta( $logTableSql );
 
 	$wpdb->query("
-		ALTER TABLE {$wpdb->eepos_events->log}
+		ALTER TABLE {$wpdb->eepos_events_log}
 		ADD CONSTRAINT `fk_posts`
 			FOREIGN KEY (`post_id`) REFERENCES `wp_posts` (`ID`)
 				ON UPDATE CASCADE
