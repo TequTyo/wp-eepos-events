@@ -131,6 +131,18 @@ class EeposEventsUpcomingWidget extends WP_Widget {
 			] )
 			: [];
 
+		foreach ($posts as $post) {
+			$post->meta = get_post_meta($post->ID);
+		}
+
+		usort($posts, function($a, $b) {
+			$aKey = "{$a->meta['event_start_date'][0]} {$a->meta['event_start_time'][0]}";
+			$bKey = "{$b->meta['event_start_date'][0]} {$b->meta['event_start_time'][0]}";
+			if ($aKey > $bKey) return 1;
+			if ($aKey < $bKey) return -1;
+			return 0;
+		});
+
 		$moreEventsLink = $instance['more_events_link'] ?? '';
 
 		$useDefaultStyles = $instance['use_default_styles'] ?? true;

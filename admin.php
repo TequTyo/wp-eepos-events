@@ -14,7 +14,9 @@ add_filter( 'manage_eepos_event_posts_columns', 'eepos_events_define_event_list_
 function eepos_events_get_event_list_column_values( $column, $post_id ) {
 	if ( $column === 'event_category' ) {
 		$terms = wp_get_post_terms( $post_id, 'eepos_event_category' );
-		echo implode(', ', array_map(function($term) { return $term->name; }, $terms));
+		echo implode( ', ', array_map( function ( $term ) {
+			return $term->name;
+		}, $terms ) );
 	} else if ( $column === 'event_date' ) {
 		$startDate   = get_post_meta( $post_id, 'event_start_date', true );
 		$currentYear = date( 'Y' );
@@ -38,6 +40,39 @@ function eepos_events_get_event_list_column_values( $column, $post_id ) {
 
 add_filter( 'manage_eepos_event_posts_custom_column', 'eepos_events_get_event_list_column_values', 10, 2 );
 
+function eepos_events_set_sortable_event_list_columns( $columns ) {
+	$columns['event_date'] = 'eepos_events_event_date';
+
+	return $columns;
+}
+
+add_filter( 'manage_edit-eepos_event_sortable_columns', 'eepos_events_set_sortable_event_list_columns' );
+
+function eepos_events_custom_sorts( WP_Query $query ) {
+	$order = $query->get('order') ?: 'ASC';
+	$orderBy = $query->get('orderby');
+
+	if ($orderBy === 'eepos_events_event_date') {
+		$query->set( 'meta_query', [
+			'relation'    => 'AND',
+			'date_clause' => [
+				'key'     => 'event_start_date',
+				'compare' => 'EXISTS'
+			],
+			'time_clause' => [
+				'key'     => 'event_start_time',
+				'compare' => 'EXISTS'
+			],
+		] );
+		$query->set( 'orderby', [
+			'date_clause' => $order,
+			'time_clause' => $order
+		] );
+	}
+}
+
+add_action( 'pre_get_posts', 'eepos_events_custom_sorts' );
+
 function eepos_events_add_import_menu_item() {
 	add_menu_page( 'Tuo tapahtumat Eepoksesta', 'Tuo tapahtumat Eepoksesta', 'manage_options', 'import-eepos-events', 'eepos_events_import_page' );
 }
@@ -50,10 +85,10 @@ function eepos_events_import_page() {
 	$eeposUrl = get_option( 'eepos_events_eepos_url', '' );
 	$eeposUrl = esc_attr( $eeposUrl );
 
-	$importKey = get_option('eepos_events_import_key', null);
-	if (!$importKey) {
-		$importKey = bin2hex(openssl_random_pseudo_bytes(16));
-		update_option('eepos_events_import_key', $importKey);
+	$importKey = get_option( 'eepos_events_import_key', null );
+	if ( ! $importKey ) {
+		$importKey = bin2hex( openssl_random_pseudo_bytes( 16 ) );
+		update_option( 'eepos_events_import_key', $importKey );
 	}
 
 	$importUrl = get_site_url() . '/eepos-events/actions/import?key=' . $importKey;
@@ -87,7 +122,7 @@ function eepos_events_import_page() {
 			       class="regular-text"
 			       style="width: 800px; max-width: 100%"
 			       readonly
-			       value="<?= esc_attr($importUrl) ?>">
+			       value="<?= esc_attr( $importUrl ) ?>">
 		</p>
 	</div>
 	<?php
@@ -112,7 +147,7 @@ function eepos_events_import_action() {
 
 	try {
 		eepos_events_import( $eeposUrl );
-	} catch (EeposEventsImportException $e) {
+	} catch ( EeposEventsImportException $e ) {
 		$exit( null, $e->getMessage() );
 	}
 
