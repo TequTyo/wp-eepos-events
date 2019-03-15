@@ -159,23 +159,26 @@ class EeposEventsUpcomingWidget extends WP_Widget {
 				<ul class="event-list">
 					<?php
 					foreach ( $posts as $post ) {
-						$meta      = get_post_meta( $post->ID );
-
-						$startDate = new DateTime($meta['event_start_date'][0]);
+						$startDate = new DateTime($post->meta['event_start_date'][0]);
 						$formattedStartDate = date_i18n( 'D j.n.', $startDate->format('U') );
 
-						$startTime = DateTime::createFromFormat('H:i:s', $meta['event_start_time'][0]);
+						$startTime = DateTime::createFromFormat('H:i:s', $post->meta['event_start_time'][0]);
 						$formattedStartTime = date_i18n( 'G.i', $startTime->format('U') );
+
+						$location = $post->meta['location'][0] ?? '';
 
 						?>
 						<li class="event">
+							<div class="event-title"><?= esc_html( $post->post_title ) ?></div>
 							<div class="event-date">
 								<?= $formattedStartDate ?>
 								<?php if ($formattedStartTime !== '0.00') { ?>
 									klo <?= $formattedStartTime ?>
 								<?php } ?>
 							</div>
-							<div class="event-title"><?= esc_html( $post->post_title ) ?></div>
+							<?php if ($location !== '') { ?>
+								<div class="event-location"><?= esc_html($location) ?></div>
+							<?php } ?>
 						</li>
 					<?php } ?>
 				</ul>

@@ -22,7 +22,8 @@ class EeposEventsListWidget extends WP_Widget {
 			'event_count'          => 5,
 			'more_events_link'     => '',
 			'use_default_styles'   => true,
-			'restrict_to_category' => 0
+			'restrict_to_category' => 0,
+			'include_description'  => 1
 		];
 
 		$args = wp_parse_args( $instance, $defaults );
@@ -64,6 +65,13 @@ class EeposEventsListWidget extends WP_Widget {
 				<?php _e( 'Käytä perustyylejä', 'eepos_events' ) ?>
 			</label>
 		</p>
+		<p>
+			<label>
+				<input type="checkbox"
+				       name="<?= $this->get_field_name( 'include_description' ) ?>"<?= $args['include_description'] ? ' checked' : '' ?>>
+				<?php _e( 'Näytä kuvaus', 'eepos_events' ) ?>
+			</label>
+		</p>
 		<?php
 	}
 
@@ -72,6 +80,7 @@ class EeposEventsListWidget extends WP_Widget {
 		$instance['title']              = wp_strip_all_tags( $new_instance['title'] ?? '' );
 		$instance['more_events_link']   = wp_strip_all_tags( $new_instance['more_events_link'] ?? '' );
 		$instance['use_default_styles'] = ( $new_instance['use_default_styles'] ?? null ) === 'on';
+		$instance['include_description'] = ( $new_instance['include_description'] ?? null ) === 'on';
 
 		return $instance;
 	}
@@ -159,16 +168,16 @@ class EeposEventsListWidget extends WP_Widget {
 					<ul class="event-list">
 						<?php
 						foreach ( $posts as $post ) {
-							$meta      = get_post_meta( $post->ID );
-
-							$startDate = new DateTime($meta['event_start_date'][0]);
+							$startDate = new DateTime($post->meta['event_start_date'][0]);
 							$formattedStartDate = date_i18n( 'D j.n.', $startDate->format('U') );
 
-							$startTime = DateTime::createFromFormat('H:i:s', $meta['event_start_time'][0]);
+							$startTime = DateTime::createFromFormat('H:i:s', $post->meta['event_start_time'][0]);
 							$formattedStartTime = date_i18n( 'G.i', $startTime->format('U') );
 
 							$content = apply_filters('the_content', $post->post_content);
 							$content = str_replace(']]>', ']]&gt;', $content);
+
+							$location = $post->meta['location'][0] ?? '';
 
 							?>
 							<li class="event">
@@ -179,12 +188,17 @@ class EeposEventsListWidget extends WP_Widget {
 										<?php if ($formattedStartTime !== '0.00') { ?>
 											klo <?= $formattedStartTime ?>
 										<?php } ?>
+										<?php if ($location !== '') { ?>
+											<span class="event-location"><?= esc_html($location) ?></span>
+										<?php } ?>
 									</span>
 								</a>
 								<div class="event-info">
-									<div class="description">
-										<?= $content ?>
-									</div>
+									<?php if ($instance['include_description']) { ?>
+										<div class="description">
+											<?= $content ?>
+										</div>
+									<?php } ?>
 								</div>
 							</li>
 						<?php } ?>

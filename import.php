@@ -64,6 +64,7 @@ function eepos_events_import($eeposUrl) {
 		update_post_meta($postId, 'event_end_date', $event->end_date);
 		update_post_meta($postId, 'event_start_time', $event->start_time);
 		update_post_meta($postId, 'event_end_time', $event->end_time);
+		update_post_meta($postId, 'location', $event->location);
 		update_post_meta($postId, 'instances', json_encode($event->instances));
 		update_post_meta($postId, 'organizers', json_encode($event->organizers));
 
