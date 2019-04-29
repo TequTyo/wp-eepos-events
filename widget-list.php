@@ -22,11 +22,20 @@ class EeposEventsListWidget extends WP_Widget {
 			'event_count'          => 5,
 			'more_events_link'     => '',
 			'use_default_styles'   => true,
-			'restrict_to_category' => 0,
+			'restrict_to_category' => [],
 			'include_description'  => 1
 		];
 
 		$args = wp_parse_args( $instance, $defaults );
+
+		// Backwards compat, restrict_to_category used to be just 1 term id instead of an array
+		if (! is_array($args['restrict_to_category'])) {
+			if ($args['restrict_to_category'] === "0") {
+				$args['restrict_to_category'] = [];
+			} else {
+				$args['restrict_to_category'] = [$args['restrict_to_category']];
+			}
+		}
 
 		$catQuery = "
 			SELECT {$wpdb->terms}.term_id, {$wpdb->terms}.name FROM {$wpdb->terms}
@@ -35,7 +44,6 @@ class EeposEventsListWidget extends WP_Widget {
 			GROUP BY {$wpdb->terms}.term_id
 		";
 		$catRows  = $wpdb->get_results( $catQuery );
-		array_unshift( $catRows, (object) [ 'term_id' => 0, 'name' => 'Kaikki' ] );
 
 		?>
 		<p>
@@ -48,10 +56,11 @@ class EeposEventsListWidget extends WP_Widget {
 		<p>
 			<label>
 				<?php _e( 'Näytettävä kategoria', 'eepos_events' ) ?><br>
-				<select name="<?= $this->get_field_name( 'restrict_to_category' ) ?>">
+				<select name="<?= $this->get_field_name( 'restrict_to_category' ) ?>[]" multiple>
+					<option value="0" <?= count($args['restrict_to_category']) === 0 ? ' selected' : '' ?>>Kaikki</option>
 					<?php foreach ( $catRows as $category ) { ?>
 						<option
-							value="<?= esc_attr( $category->term_id ) ?>"<?= $args['restrict_to_category'] == $category->term_id ? ' selected' : '' ?>>
+							value="<?= esc_attr( $category->term_id ) ?>"<?= in_array($category->term_id, $args['restrict_to_category']) ? ' selected' : '' ?>>
 							<?= esc_html( $category->name ) ?>
 						</option>
 					<?php } ?>
@@ -82,11 +91,25 @@ class EeposEventsListWidget extends WP_Widget {
 		$instance['use_default_styles'] = ( $new_instance['use_default_styles'] ?? null ) === 'on';
 		$instance['include_description'] = ( $new_instance['include_description'] ?? null ) === 'on';
 
+		$instance['restrict_to_category'] = $new_instance['restrict_to_category'] ?? [];
+		if (in_array("0", $instance['restrict_to_category'])) {
+			$instance['restrict_to_category'] = [];
+		}
+		$instance['restrict_to_category'] = array_map('intval', $instance['restrict_to_category']);
+
 		return $instance;
 	}
 
-	protected function getListEventPostIds( $termId = null ) {
+	protected function getListEventPostIds( $termIds = null ) {
 		global $wpdb;
+
+		if ($termIds === "0") {
+			$termIds = [];
+		}
+
+		if (! is_array($termIds) && ! is_null($termIds)) {
+			$termIds = [$termIds];
+		}
 
 		$query = $wpdb->prepare( "
 			SELECT {$wpdb->posts}.ID FROM {$wpdb->posts}
@@ -98,10 +121,10 @@ class EeposEventsListWidget extends WP_Widget {
 			WHERE {$wpdb->posts}.post_type = 'eepos_event'
 			AND {$wpdb->posts}.post_status = 'publish'
 			AND startDateMeta.meta_value >= DATE_SUB(CURDATE(), INTERVAL 2 WEEK)
-			" . ( $termId ? "AND {$wpdb->terms}.term_id = %d" : "" ) . "
+			" . ( $termIds && count($termIds) ? "AND {$wpdb->terms}.term_id IN (" . implode(', ', array_fill(0, count($termIds), '%d')) . ")" : "" ) . "
 			GROUP BY {$wpdb->posts}.ID
 			ORDER BY startDateMeta.meta_value ASC, startTimeMeta.meta_value ASC
-		", $termId ? [$termId] : [] );
+		", $termIds && count($termIds) ? $termIds : [] );
 		$posts = $wpdb->get_results( $query );
 
 		return array_map( function ( $p ) {
@@ -111,7 +134,7 @@ class EeposEventsListWidget extends WP_Widget {
 
 	public function widget( $args, $instance ) {
 		$title              = apply_filters( 'widget_title', $instance['title'] ?? '' );
-		$restrictToCategory = $instance['restrict_to_category'] ?? 0;
+		$restrictToCategory = $instance['restrict_to_category'] ?? null;
 
 		$listEventPostIds = $this->getListEventPostIds( $restrictToCategory );
 		$posts            = count( $listEventPostIds )

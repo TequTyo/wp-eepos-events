@@ -21,10 +21,19 @@ class EeposEventsUpcomingWidget extends WP_Widget {
 			'event_count'          => 5,
 			'more_events_link'     => '',
 			'use_default_styles'   => true,
-			'restrict_to_category' => 0
+			'restrict_to_category' => []
 		];
 
 		$args = wp_parse_args( $instance, $defaults );
+
+		// Backwards compat, restrict_to_category used to be just 1 term id instead of an array
+		if (! is_array($args['restrict_to_category'])) {
+			if ($args['restrict_to_category'] === "0") {
+				$args['restrict_to_category'] = [];
+			} else {
+				$args['restrict_to_category'] = [$args['restrict_to_category']];
+			}
+		}
 
 		$catQuery = "
 			SELECT {$wpdb->terms}.term_id, {$wpdb->terms}.name FROM {$wpdb->terms}
@@ -33,7 +42,6 @@ class EeposEventsUpcomingWidget extends WP_Widget {
 			GROUP BY {$wpdb->terms}.term_id
 		";
 		$catRows  = $wpdb->get_results( $catQuery );
-		array_unshift( $catRows, (object) [ 'term_id' => 0, 'name' => 'Kaikki' ] );
 
 		?>
 		<p>
@@ -53,10 +61,11 @@ class EeposEventsUpcomingWidget extends WP_Widget {
 		<p>
 			<label>
 				<?php _e( 'Näytettävä kategoria', 'eepos_events' ) ?><br>
-				<select name="<?= $this->get_field_name( 'restrict_to_category' ) ?>">
+				<select name="<?= $this->get_field_name( 'restrict_to_category' ) ?>[]" multiple>
+					<option value="0" <?= count($args['restrict_to_category']) === 0 ? ' selected' : '' ?>>Kaikki</option>
 					<?php foreach ( $catRows as $category ) { ?>
 						<option
-							value="<?= esc_attr( $category->term_id ) ?>"<?= $args['restrict_to_category'] == $category->term_id ? ' selected' : '' ?>>
+							value="<?= esc_attr( $category->term_id ) ?>"<?= in_array($category->term_id, $args['restrict_to_category']) ? ' selected' : '' ?>>
 							<?= esc_html( $category->name ) ?>
 						</option>
 					<?php } ?>
@@ -86,15 +95,28 @@ class EeposEventsUpcomingWidget extends WP_Widget {
 		$instance['event_count']          = intval( wp_strip_all_tags( $new_instance['event_count'] ?? '5' ) );
 		$instance['more_events_link']     = wp_strip_all_tags( $new_instance['more_events_link'] ?? '' );
 		$instance['use_default_styles']   = ( $new_instance['use_default_styles'] ?? null ) === 'on';
-		$instance['restrict_to_category'] = intval( $new_instance['restrict_to_category'] ?? '0' );
+
+		$instance['restrict_to_category'] = $new_instance['restrict_to_category'] ?? [];
+		if (in_array("0", $instance['restrict_to_category'])) {
+			$instance['restrict_to_category'] = [];
+		}
+		$instance['restrict_to_category'] = array_map('intval', $instance['restrict_to_category']);
 
 		return $instance;
 	}
 
-	protected function getUpcomingEventPostIds( $count, $termId = null ) {
+	protected function getUpcomingEventPostIds( $count, $termIds = [] ) {
 		global $wpdb;
 
-		$values = $termId ? [ $termId, $count ] : [ $count ];
+		if ($termIds === "0") {
+			$termIds = [];
+		}
+
+		if (! is_array($termIds) && ! is_null($termIds)) {
+			$termIds = [$termIds];
+		}
+
+		$values = $termIds && count($termIds) ? array_merge($termIds, [$count]) : [ $count ];
 
 		$query = $wpdb->prepare( "
 			SELECT {$wpdb->posts}.ID FROM {$wpdb->posts}
@@ -106,7 +128,7 @@ class EeposEventsUpcomingWidget extends WP_Widget {
 			WHERE {$wpdb->posts}.post_type = 'eepos_event'
 			AND {$wpdb->posts}.post_status = 'publish'
 			AND startDateMeta.meta_value >= CURDATE()
-			" . ( $termId ? "AND {$wpdb->terms}.term_id = %d" : "" ) . "
+			" . ( $termIds && count($termIds) ? "AND {$wpdb->terms}.term_id IN (" . implode(', ', array_fill(0, count($termIds), '%d')) . ")" : "" ) . "
 			GROUP BY {$wpdb->posts}.ID
 			ORDER BY startDateMeta.meta_value ASC, startTimeMeta.meta_value ASC
 			LIMIT %d
