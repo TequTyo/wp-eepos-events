@@ -74,7 +74,14 @@ function eepos_events_custom_sorts( WP_Query $query ) {
 add_action( 'pre_get_posts', 'eepos_events_custom_sorts' );
 
 function eepos_events_add_import_menu_item() {
-	add_menu_page( 'Tuo tapahtumat Eepoksesta', 'Tuo tapahtumat Eepoksesta', 'manage_options', 'import-eepos-events', 'eepos_events_import_page' );
+	add_submenu_page(
+		'edit.php?post_type=eepos_event',
+		'Tuo tapahtumat Eepoksesta',
+		'Tuo tapahtumat Eepoksesta',
+		'manage_options',
+		'import-eepos-events',
+		'eepos_events_import_page'
+	);
 }
 
 add_action( 'admin_menu', 'eepos_events_add_import_menu_item' );
