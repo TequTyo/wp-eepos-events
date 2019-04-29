@@ -70,4 +70,19 @@ function eepos_events_import($eeposUrl) {
 
 		$wpdb->query("REPLACE INTO {$wpdb->eepos_events_log} (event_id, post_id) VALUES ({$sanitizedId}, {$postId})");
 	}
+
+	// Remove upcoming events that have been deleted in Eepos
+	$eventIds = array_map(function($ev) { return intval($ev->id); }, $parsed);
+	$toRemove = $wpdb->get_results("
+		SELECT eventLog.event_id, eventLog.post_id FROM {$wpdb->eepos_events_log} AS eventLog
+		INNER JOIN {$wpdb->prefix}postmeta AS endDateMeta
+		    ON endDateMeta.post_id = eventLog.post_id
+		    AND endDateMeta.meta_key = 'event_end_date'
+		WHERE endDateMeta.meta_value >= CURDATE()
+		" . (count($eventIds) ? "AND events.id NOT IN (" . implode(', ', $eventIds) . ")" : '') . "
+	");
+
+	foreach ($toRemove as $item) {
+		wp_delete_post($item->post_id, true);
+	}
 }
