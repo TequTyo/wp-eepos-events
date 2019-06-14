@@ -187,7 +187,7 @@ class EeposEventsListWidget extends WP_Widget {
 					$monthName = date_i18n( 'F', DateTime::createFromFormat( 'm', $month )->format( 'U' ) );
 
 					?>
-					<h3><?= $monthName ?><?= $year !== $currentYear ? ", {$year}" : '' ?></h3>
+					<h3><?= ucfirst($monthName) ?><?= $year !== $currentYear ? ", {$year}" : '' ?></h3>
 					<ul class="event-list">
 						<?php
 						foreach ( $posts as $post ) {
