@@ -23,7 +23,9 @@ class EeposEventsListWidget extends WP_Widget {
 			'more_events_link'     => '',
 			'use_default_styles'   => true,
 			'restrict_to_category' => [],
-			'include_description'  => 1
+			'include_description'  => 1,
+			'show_room' => false,
+			'room_format' => '{huone} ({kerros}, {rakennus})'
 		];
 
 		$args = wp_parse_args( $instance, $defaults );
@@ -81,6 +83,19 @@ class EeposEventsListWidget extends WP_Widget {
 				<?php _e( 'Näytä kuvaus', 'eepos_events' ) ?>
 			</label>
 		</p>
+		<p>
+			<label>
+				<input type="checkbox"
+				       name="<?= $this->get_field_name( 'show_room' ) ?>"<?= $args['show_room'] ? ' checked' : '' ?>>
+				<?php _e( 'Näytä huone', 'eepos_events' ) ?>
+			</label>
+			<br>
+			<label>
+				<?php _e( 'Huoneen formaatti', 'eepos_events' ) ?>
+				<input type="text" class="widefat" name="<?= $this->get_field_name( 'room_format' ) ?>"
+				       value="<?= esc_attr( $args['room_format'] ) ?>">
+			</label>
+		</p>
 		<?php
 	}
 
@@ -90,6 +105,9 @@ class EeposEventsListWidget extends WP_Widget {
 		$instance['more_events_link']   = wp_strip_all_tags( $new_instance['more_events_link'] ?? '' );
 		$instance['use_default_styles'] = ( $new_instance['use_default_styles'] ?? null ) === 'on';
 		$instance['include_description'] = ( $new_instance['include_description'] ?? null ) === 'on';
+
+		$instance['show_room'] = ( $new_instance['show_room'] ?? null ) === 'on';
+		$instance['room_format'] = wp_strip_all_tags( $new_instance['room_format'] ?? '' );
 
 		$instance['restrict_to_category'] = $new_instance['restrict_to_category'] ?? [];
 		if (in_array("0", $instance['restrict_to_category'])) {
@@ -174,6 +192,9 @@ class EeposEventsListWidget extends WP_Widget {
 
 		wp_enqueue_script( 'eepos_events_list_widget_script' );
 
+		$showRoom = $instance['show_room'] ?? false;
+		$roomFormat = $instance['room_format'] ?? '';
+
 		?>
 		<div class="eepos-events-list-widget<?= $useDefaultStyles ? ' with-default-styles' : '' ?>">
 			<?php if ( $title !== '' ) { ?>
@@ -202,6 +223,13 @@ class EeposEventsListWidget extends WP_Widget {
 
 							$location = $post->meta['location'][0] ?? '';
 
+							$roomName = $post->meta['room'][0] ?? '';
+							$room = str_replace(
+								['{huone}', '{kerros}', '{rakennus}'],
+								[$roomName, $post->meta['floor'][0] ?? '', $post->meta['building'][0] ?? ''],
+								$roomFormat
+							);
+
 							?>
 							<li class="event">
 								<a href="javascript:void(0)" class="event-header eepos-events-list-widget-event-header">
@@ -217,7 +245,12 @@ class EeposEventsListWidget extends WP_Widget {
 									</span>
 								</a>
 								<div class="event-info">
-									<?php if ($instance['include_description']) { ?>
+									<?php if ($showRoom && $roomName !== '') { ?>
+										<div class="room">
+											<strong>Paikka:</strong> <?= $room ?>
+										</div>
+									<?php } ?>
+									<?php if ($instance['include_description'] && $content !== '') { ?>
 										<div class="description">
 											<?= $content ?>
 										</div>

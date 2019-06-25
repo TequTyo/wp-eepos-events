@@ -53,6 +53,10 @@
     display: none;
 }
 
+.eepos-events-list-widget.with-default-styles .room {
+    margin-top: 22px;
+}
+
 .eepos-events-list-widget.with-default-styles .description {
     margin-top: 22px;
 }

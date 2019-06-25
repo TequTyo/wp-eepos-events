@@ -67,6 +67,9 @@ function eepos_events_import($eeposUrl) {
 		update_post_meta($postId, 'location', $event->location);
 		update_post_meta($postId, 'instances', json_encode($event->instances));
 		update_post_meta($postId, 'organizers', json_encode($event->organizers));
+		update_post_meta($postId, 'room', $event->room);
+		update_post_meta($postId, 'floor', $event->floor);
+		update_post_meta($postId, 'building', $event->building);
 
 		$wpdb->query("REPLACE INTO {$wpdb->eepos_events_log} (event_id, post_id) VALUES ({$sanitizedId}, {$postId})");
 	}
