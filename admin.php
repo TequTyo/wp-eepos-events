@@ -120,6 +120,13 @@ function eepos_events_import_page() {
 			</p>
 		</form>
 
+		<form action="<?= $formAction ?>" method="post" id="eepos_events_clear_form">
+			<input type="hidden" name="action" value="eepos_events_clear">
+			<p class="submit">
+				<input class="button button-danger" type="submit" value="Tyhjennä tapahtumat">
+			</p>
+		</form>
+
 		<h2>Tuo automaattisesti</h2>
 		<p>
 			Kopioi seuraava osoite Eepoksen integraatiosivun kohtaan "Tapahtumien päivitysosoite".<br>
@@ -132,6 +139,17 @@ function eepos_events_import_page() {
 			       value="<?= esc_attr( $importUrl ) ?>">
 		</p>
 	</div>
+
+	<script>
+		(function() {
+			document.getElementById('eepos_events_clear_form').addEventListener('submit', function(ev) {
+				var result = window.confirm("Tyhjennä kaikki Eepos-tapahtumat?");
+				if (!result) {
+					ev.preventDefault();
+				}
+			});
+		})();
+	</script>
 	<?php
 }
 
@@ -163,6 +181,35 @@ function eepos_events_import_action() {
 }
 
 add_action( 'admin_post_eepos_events_import', 'eepos_events_import_action' );
+
+function eepos_events_clear_action() {
+	eepos_events_add_import_menu_item();
+
+	$exit = function ( $success = null, $err = null ) {
+		if ( $success ) {
+			$_SESSION['eepos_events_success'] = $success;
+		}
+		if ( $err ) {
+			$_SESSION['eepos_events_error'] = $err;
+		}
+
+		wp_safe_redirect( menu_page_url( 'import-eepos-events', false ) );
+		exit;
+	};
+
+	$eventPosts = get_posts([
+		'post_type' => 'eepos_event',
+		'numberposts' => 10000,
+	]);
+
+	foreach ($eventPosts as $eventPost) {
+		wp_delete_post($eventPost->ID);
+	}
+
+	$exit( count($eventPosts) . ' tapahtumaa tyhjennetty!' );
+}
+
+add_action( 'admin_post_eepos_events_clear', 'eepos_events_clear_action' );
 
 function eepos_events_admin_notices() {
 	$error = $_SESSION['eepos_events_error'] ?? null;
