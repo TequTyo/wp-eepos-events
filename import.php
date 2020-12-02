@@ -82,7 +82,7 @@ function eepos_events_import($eeposUrl) {
 		    ON endDateMeta.post_id = eventLog.post_id
 		    AND endDateMeta.meta_key = 'event_end_date'
 		WHERE endDateMeta.meta_value >= CURDATE()
-		" . (count($eventIds) ? "AND events.id NOT IN (" . implode(', ', $eventIds) . ")" : '') . "
+		" . (count($eventIds) ? "AND eventLog.event_id NOT IN (" . implode(', ', $eventIds) . ")" : '') . "
 	");
 
 	foreach ($toRemove as $item) {
