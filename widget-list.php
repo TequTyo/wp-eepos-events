@@ -23,9 +23,7 @@ class EeposEventsListWidget extends WP_Widget {
 			'more_events_link'     => '',
 			'use_default_styles'   => true,
 			'restrict_to_category' => [],
-			'include_description'  => 1,
-			'show_room' => false,
-			'room_format' => '{huone} ({kerros}, {rakennus})'
+			'include_description'  => 1
 		];
 
 		$args = wp_parse_args( $instance, $defaults );
@@ -83,19 +81,6 @@ class EeposEventsListWidget extends WP_Widget {
 				<?php _e( 'Näytä kuvaus', 'eepos_events' ) ?>
 			</label>
 		</p>
-		<p>
-			<label>
-				<input type="checkbox"
-				       name="<?= $this->get_field_name( 'show_room' ) ?>"<?= $args['show_room'] ? ' checked' : '' ?>>
-				<?php _e( 'Näytä huone', 'eepos_events' ) ?>
-			</label>
-			<br>
-			<label>
-				<?php _e( 'Huoneen formaatti', 'eepos_events' ) ?>
-				<input type="text" class="widefat" name="<?= $this->get_field_name( 'room_format' ) ?>"
-				       value="<?= esc_attr( $args['room_format'] ) ?>">
-			</label>
-		</p>
 		<?php
 	}
 
@@ -105,9 +90,6 @@ class EeposEventsListWidget extends WP_Widget {
 		$instance['more_events_link']   = wp_strip_all_tags( $new_instance['more_events_link'] ?? '' );
 		$instance['use_default_styles'] = ( $new_instance['use_default_styles'] ?? null ) === 'on';
 		$instance['include_description'] = ( $new_instance['include_description'] ?? null ) === 'on';
-
-		$instance['show_room'] = ( $new_instance['show_room'] ?? null ) === 'on';
-		$instance['room_format'] = wp_strip_all_tags( $new_instance['room_format'] ?? '' );
 
 		$instance['restrict_to_category'] = $new_instance['restrict_to_category'] ?? [];
 		if (in_array("0", $instance['restrict_to_category'])) {
@@ -192,9 +174,6 @@ class EeposEventsListWidget extends WP_Widget {
 
 		wp_enqueue_script( 'eepos_events_list_widget_script' );
 
-		$showRoom = $instance['show_room'] ?? false;
-		$roomFormat = $instance['room_format'] ?? '';
-
 		?>
 		<div class="eepos-events-list-widget<?= $useDefaultStyles ? ' with-default-styles' : '' ?>">
 			<?php if ( $title !== '' ) { ?>
@@ -219,16 +198,24 @@ class EeposEventsListWidget extends WP_Widget {
 							$formattedStartTime = date_i18n( 'G.i', $startTime->format('U') );
 
 							$content = apply_filters('the_content', $post->post_content);
-							$content = str_replace(']]>', ']]&gt;', $content);
 
-							$location = $post->meta['location'][0] ?? '';
+							$location = $post->meta['location'][0];
 
-							$roomName = $post->meta['room'][0] ?? '';
+							$roomFormat = '{huone} ({kerros}, {rakennus})';
+							$roomName = $post->meta['room'][0];
 							$room = str_replace(
 								['{huone}', '{kerros}', '{rakennus}'],
 								[$roomName, $post->meta['floor'][0] ?? '', $post->meta['building'][0] ?? ''],
 								$roomFormat
 							);
+
+							if ($room === ' (, )') {
+								$room = '';
+							}
+
+							$imageEvent = $post->meta['custom_image'][0];
+							$imageAttachment = wp_get_attachment_image_src($imageEvent);
+							$imageUrl = $imageAttachment[0];
 
 							?>
 							<li class="event">
@@ -239,22 +226,17 @@ class EeposEventsListWidget extends WP_Widget {
 										<?php if ($formattedStartTime !== '0.00') { ?>
 											klo <?= $formattedStartTime ?>
 										<?php } ?>
-										<?php if ($location !== '') { ?>
-											<span class="event-location"><?= esc_html($location) ?></span>
-										<?php } ?>
 									</span>
 								</a>
 								<div class="event-info">
-									<?php if ($showRoom && $roomName !== '') { ?>
-										<div class="room">
+									<span class="event-location"><?= $location ?></span>
+									<div class="room">
 											<strong>Paikka:</strong> <?= $room ?>
-										</div>
-									<?php } ?>
-									<?php if ($instance['include_description'] && $content !== '') { ?>
-										<div class="description">
-											<?= $content ?>
-										</div>
-									<?php } ?>
+									</div>
+									<div class="description">
+										<span>Kuvaus: <?= $content ?></span>
+										<span><img src="<?= $imageUrl ?>" /></span>
+									</div>
 								</div>
 							</li>
 						<?php } ?>
