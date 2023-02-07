@@ -229,13 +229,13 @@ class EeposEventsListWidget extends WP_Widget {
 									</span>
 								</a>
 								<div class="event-info">
-									<span class="event-location"><?= $location ?></span>
+									<span class="event-location"><?= esc_html($location) ?></span>
 									<div class="room">
-											<strong>Paikka:</strong> <?= $room ?>
+											<strong>Paikka:</strong> <?= esc_html($room) ?>
 									</div>
 									<div class="description">
 										<span>Kuvaus: <?= $content ?></span>
-										<span><img src="<?= $imageUrl ?>" /></span>
+										<span><img src="<?= esc_url($imageUrl) ?>" /></span>
 									</div>
 								</div>
 							</li>

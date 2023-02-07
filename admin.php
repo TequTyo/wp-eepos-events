@@ -1,5 +1,7 @@
 <?php
 
+global $post;
+
 function eepos_events_define_event_list_columns() {
 	return [
 		'cb'             => '<input type="checkbox">',
@@ -46,7 +48,7 @@ function eepos_events_get_event_list_column_values( $column, $post_id ) {
 			$eventLocation = get_post_meta( $post_id, 'location', true );
 
 			if ( !empty($eventLocation) ) {
-				echo $eventLocation;
+				echo esc_html($eventLocation);
 			} else {
 				echo '-';
 			}
@@ -55,7 +57,7 @@ function eepos_events_get_event_list_column_values( $column, $post_id ) {
 			$eventRoom = get_post_meta( $post_id, 'room', true );
 
 			if ( !empty($eventRoom) ) {
-				echo $eventRoom;
+				echo esc_html($eventRoom);
 			} else {
 				echo '-';
 			}
@@ -75,7 +77,7 @@ function eepos_events_get_event_list_column_values( $column, $post_id ) {
 			$existing_eepos_image = wp_get_attachment_image_src($cur_image_eepos);
 			if (!empty($existing_eepos_image[0])) {
 				$existing_eepos_image_url = $existing_eepos_image[0];
-				echo '<img src="'.$existing_eepos_image_url.'" width="50px" height="50px" />';
+				echo '<img src="'.esc_url($existing_eepos_image_url).'" width="50px" height="50px" />';
 			} else {
 				echo '-';
 			}
@@ -305,7 +307,7 @@ function eepos_custom_meta_boxes() {
 	if ( !empty($image_inf) ) {
 		$existing_eepos_image = wp_get_attachment_image_src( $image_inf );
 		$existing_eepos_image_url = $existing_eepos_image[0];
-		echo '<img src="'.$existing_eepos_image_url.'" width="200px" height="200px" />';
+		echo '<img src="'.esc_url($existing_eepos_image_url).'" width="200px" height="200px" />';
 	}
 }
 
@@ -321,10 +323,12 @@ function eepos_edit_save_image($post_id) {
 		switch($post_type) {
 			case 'eepos_event':
 				if ( isset($_POST['eepos_room']) ) {
-					update_post_meta($post_id, 'room', $_POST['eepos_room']);
+					$eepos_room_val = sanitize_text_field($_POST['eepos_room']);
+					update_post_meta($post_id, 'room', $eepos_room_val);
 				}
 				if ( isset($_POST['eepos_location']) ) {
-					update_post_meta($post_id, 'location', $_POST['eepos_location']);
+					$eepos_location_val = sanitize_text_field($_POST['eepos_location']);
+					update_post_meta($post_id, 'location', $eepos_location_val);
 				}
 				if ( isset($_FILES['custom_image']) && ($_FILES['custom_image']['size'] > 0) ) {
 					$allowed_file_size = 2000000;
