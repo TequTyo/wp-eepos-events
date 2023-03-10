@@ -1,0 +1,229 @@
+.post-title h3 {
+    color: #0B3574;
+    font-family: "ivymode", Sans-serif;
+    font-weight: normal;
+}
+
+element-section {
+    position: relative;
+}
+
+.event-datetime p {
+    color: #0B3574;
+    font-family: "ivymode", Sans-serif;
+    font-size: 18px;
+    font-weight: normal;
+}
+
+.event-location p {
+    color: #0B3574;
+    font-family: "ivymode", Sans-serif;
+    font-size: 18px;
+    font-weight: normal;
+}
+
+.element-66922 {
+    width: 33%;
+}
+
+.element-column-wrap {
+    width: 100%;
+    position: relative;
+    display: flex;
+}
+
+.element-widget-image {
+    padding: 10px;
+    padding-top: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+}
+
+.element-widget {
+    width: 100%;
+}
+
+.widget-image-container {
+    transition: background .3s,border .3s,border-radius .3s,box-shadow .3s,transform var(--e-transform-transition-duration,.4s);
+}
+
+.image-span img {
+    vertical-align: middle;
+    display: inline-block;
+    height: auto;
+    max-width: 100%;
+    border: none;
+    border-top-color: currentcolor;
+    border-top-style: none;
+    border-top-width: medium;
+    border-right-color: currentcolor;
+    border-right-style: none;
+    border-right-width: medium;
+    border-bottom-color: currentcolor;
+    border-bottom-style: none;
+    border-bottom-width: medium;
+    border-left-color: currentcolor;
+    border-left-style: none;
+    border-left-width: medium;
+    border-image-outset: 0;
+    border-image-repeat: stretch;
+    border-image-slice: 100%;
+    border-image-source: none;
+    border-image-width: 1;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.element-d9d1837 {
+    margin-top: 20px;
+    margin-bottom: 50px;
+}
+
+.column-gap-default {
+    width: 1140px;
+}
+
+.column-row {
+     width: 100%;
+     display: flex;
+}
+
+.prenex-wrapper {
+    display: flex;
+    padding: 10px;
+    padding-top: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+    position: relative;
+    width: 100%;
+    flex-wrap: wrap;
+    align-content: flex-start;
+}
+
+.prenex-container {
+    transition: background .3s,border .3s,border-radius .3s,box-shadow .3s,transform var(--e-transform-transition-duration,.4s);
+    box-sizing: border-box;
+}
+
+.post-navigation {
+    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    display: flex;
+}
+
+.fa {
+    display: inline-block;
+    font-style: normal;
+    font-variant: normal;
+    font-variant-caps: normal;
+    font-variant-alternates: normal;
+    font-variant-east-asian: normal;
+    font-variant-emoji: ;
+    font-variant-ligatures: normal;
+    font-variant-numeric: normal;
+    font-variant-position: normal;
+    text-rendering: auto;
+    line-height: 1;
+    font-family: "Font Awesome 5 Pro";
+    font-weight: 900;
+}
+
+.previous-post-container {
+    width: calc(50% - (1px / 2));
+    white-space: nowrap;
+    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    text-overflow: ellipsis;
+}
+
+.previous-post-container a {
+    display: flex;
+    align-items: center;
+    max-width: 100%;
+}
+
+.previous-post-link {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+}
+
+.post_arrow_wrapper {
+    color: #0B3574;
+    font-size: 39px;
+}
+
+.post_arrow_wrapper i {
+    transform: translateY(-5%);
+}
+
+.angle-left::before {
+    content: "<";
+}
+
+.previous-post-container-span {
+    display: flex;
+    flex-direction: column;
+}
+
+.previous-post-container--label {
+    color: #0B3574;
+    font-family: "poppins", Sans-serif;
+    font-size: 15px;
+    font-weight: normal;
+}
+
+.previous-post-container--title {
+    color: #131520;
+    font-family: "ivymode", Sans-serif;
+    font-size: 18px;
+    font-weight: normal;
+}
+
+.next-post-container {
+    width: calc(50% - (1px / 2));
+    white-space: nowrap;
+    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    text-overflow: ellipsis;
+    text-align: right;
+}
+
+.next-post-link {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+}
+
+.angle-right {
+    font-family: "Font Awesome 5 Pro";
+    font-weight: 900;
+}
+
+.angle-right::before {
+    content: ">";
+}
+
+.next-post-container-span {
+    display: flex;
+    flex-direction: column;
+}
+
+.next-post-container--label {
+    color: #0B3574;
+    font-family: "poppins", Sans-serif;
+    font-size: 15px;
+    font-weight: normal;
+}
+
+.next-post-container--title {
+    color: #131520;
+    font-family: "ivymode", Sans-serif;
+    font-size: 18px;
+    font-weight: normal;
+}

@@ -14,76 +14,6 @@ class EeposEventsListWidget extends WP_Widget {
 		wp_register_script( 'eepos_events_list_widget_script', plugin_dir_url( __FILE__ ) . '/widget-list.js' );
 	}
 
-	public function form( $instance ) {
-		global $wpdb;
-
-		$defaults = [
-			'title'                => '',
-			'event_count'          => 5,
-			'more_events_link'     => '',
-			'use_default_styles'   => true,
-			'restrict_to_category' => [],
-			'include_description'  => 1
-		];
-
-		$args = wp_parse_args( $instance, $defaults );
-
-		// Backwards compat, restrict_to_category used to be just 1 term id instead of an array
-		if (! is_array($args['restrict_to_category'])) {
-			if ($args['restrict_to_category'] === "0") {
-				$args['restrict_to_category'] = [];
-			} else {
-				$args['restrict_to_category'] = [$args['restrict_to_category']];
-			}
-		}
-
-		$catQuery = "
-			SELECT {$wpdb->terms}.term_id, {$wpdb->terms}.name FROM {$wpdb->terms}
-			INNER JOIN {$wpdb->term_taxonomy} ON {$wpdb->term_taxonomy}.term_id = {$wpdb->terms}.term_id
-			WHERE {$wpdb->term_taxonomy}.taxonomy = 'eepos_event_category'
-			GROUP BY {$wpdb->terms}.term_id
-		";
-		$catRows  = $wpdb->get_results( $catQuery );
-
-		?>
-		<p>
-			<label>
-				<?php _e( 'Otsikko', 'eepos_events' ) ?>
-				<input type="text" class="widefat" name="<?= $this->get_field_name( 'title' ) ?>"
-				       value="<?= esc_attr( $args['title'] ) ?>">
-			</label>
-		</p>
-		<p>
-			<label>
-				<?php _e( 'Näytettävä kategoria', 'eepos_events' ) ?><br>
-				<select name="<?= $this->get_field_name( 'restrict_to_category' ) ?>[]" multiple>
-					<option value="0" <?= count($args['restrict_to_category']) === 0 ? ' selected' : '' ?>>Kaikki</option>
-					<?php foreach ( $catRows as $category ) { ?>
-						<option
-							value="<?= esc_attr( $category->term_id ) ?>"<?= in_array($category->term_id, $args['restrict_to_category']) ? ' selected' : '' ?>>
-							<?= esc_html( $category->name ) ?>
-						</option>
-					<?php } ?>
-				</select>
-			</label>
-		</p>
-		<p>
-			<label>
-				<input type="checkbox"
-				       name="<?= $this->get_field_name( 'use_default_styles' ) ?>"<?= $args['use_default_styles'] ? ' checked' : '' ?>>
-				<?php _e( 'Käytä perustyylejä', 'eepos_events' ) ?>
-			</label>
-		</p>
-		<p>
-			<label>
-				<input type="checkbox"
-				       name="<?= $this->get_field_name( 'include_description' ) ?>"<?= $args['include_description'] ? ' checked' : '' ?>>
-				<?php _e( 'Näytä kuvaus', 'eepos_events' ) ?>
-			</label>
-		</p>
-		<?php
-	}
-
 	public function update( $new_instance, $old_instance ) {
 		$instance                       = $old_instance;
 		$instance['title']              = wp_strip_all_tags( $new_instance['title'] ?? '' );
@@ -120,13 +50,12 @@ class EeposEventsListWidget extends WP_Widget {
 			LEFT JOIN {$wpdb->terms} ON {$wpdb->terms}.term_id = {$wpdb->term_taxonomy}.term_id
 			WHERE {$wpdb->posts}.post_type = 'eepos_event'
 			AND {$wpdb->posts}.post_status = 'publish'
-			AND startDateMeta.meta_value >= DATE_SUB(CURDATE(), INTERVAL 2 WEEK)
+			AND startDateMeta.meta_value >= CURDATE()
 			" . ( $termIds && count($termIds) ? "AND {$wpdb->terms}.term_id IN (" . implode(', ', array_fill(0, count($termIds), '%d')) . ")" : "" ) . "
 			GROUP BY {$wpdb->posts}.ID
 			ORDER BY startDateMeta.meta_value ASC, startTimeMeta.meta_value ASC
 		", $termIds && count($termIds) ? $termIds : [] );
 		$posts = $wpdb->get_results( $query );
-
 		return array_map( function ( $p ) {
 			return $p->ID;
 		}, $posts );
@@ -200,22 +129,22 @@ class EeposEventsListWidget extends WP_Widget {
 							$content = apply_filters('the_content', $post->post_content);
 
 							$location = $post->meta['location'][0];
+							$building = get_post_meta($post->ID, 'building', true);
+							$floor = get_post_meta($post->ID, 'floor', true);
+							$room = get_post_meta($post->ID, 'room', true);
 
-							$roomFormat = '{huone} ({kerros}, {rakennus})';
-							$roomName = $post->meta['room'][0];
-							$room = str_replace(
-								['{huone}', '{kerros}', '{rakennus}'],
-								[$roomName, $post->meta['floor'][0] ?? '', $post->meta['building'][0] ?? ''],
-								$roomFormat
-							);
-
-							if ($room === ' (, )') {
-								$room = '';
+							$roomFormat = '{room} ({floor}, {building})';
+							if (!empty($room) && !empty($floor) && !empty($building)) {
+								$roomReplaced = str_replace(
+									['{room}', '{floor}', '{building}'],
+									[$room, $floor, $building],
+									$roomFormat
+								);
+							} else {
+								$roomReplaced = "";
 							}
 
-							$imageEvent = $post->meta['custom_image'][0];
-							$imageAttachment = wp_get_attachment_image_src($imageEvent);
-							$imageUrl = $imageAttachment[0];
+							$imageUrl = wp_get_attachment_url(get_post_thumbnail_id($post->ID));
 
 							?>
 							<li class="event">
@@ -229,12 +158,18 @@ class EeposEventsListWidget extends WP_Widget {
 									</span>
 								</a>
 								<div class="event-info">
-									<span class="event-location"><?= esc_html($location) ?></span>
+									<?php if (!empty($location)) { ?>
+										<span class="event-location"><?= esc_html($location) ?></span>
+									<?php } ?>
 									<div class="room">
-											<strong>Paikka:</strong> <?= esc_html($room) ?>
+										<?php if (!empty($roomReplaced)) { ?>
+											<strong>Paikka:</strong> <?= esc_html($roomReplaced) ?>
+										<?php } ?>
 									</div>
 									<div class="description">
-										<span>Kuvaus: <?= $content ?></span>
+										<?php if (!empty($content)) { ?>
+											<span>Kuvaus: <?= $content ?></span>
+										<?php } ?>
 										<span><img src="<?= esc_url($imageUrl) ?>" /></span>
 									</div>
 								</div>

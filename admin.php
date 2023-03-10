@@ -18,6 +18,7 @@ function eepos_events_define_event_list_columns() {
 add_filter( 'manage_eepos_event_posts_columns', 'eepos_events_define_event_list_columns' );
 
 function eepos_events_get_event_list_column_values( $column, $post_id ) {
+	$cur_post = get_post($post_id);
 	switch($column) {
 		case 'event_category':
 			$terms = wp_get_post_terms( $post_id, 'eepos_event_category' );
@@ -63,7 +64,6 @@ function eepos_events_get_event_list_column_values( $column, $post_id ) {
 			}
 			break;
 		case 'event_desc':
-			$cur_post = get_post($post_id);
 			$post_cont = apply_filters('post_cont', $cur_post->post_content);
 
 			if ( !empty($post_cont)) {
@@ -73,11 +73,9 @@ function eepos_events_get_event_list_column_values( $column, $post_id ) {
 			}
 			break;
 		case 'event_image':
-			$cur_image_eepos = get_post_meta( $post_id, 'custom_image', true );
-			$existing_eepos_image = wp_get_attachment_image_src($cur_image_eepos);
-			if (!empty($existing_eepos_image[0])) {
-				$existing_eepos_image_url = $existing_eepos_image[0];
-				echo '<img src="'.esc_url($existing_eepos_image_url).'" width="50px" height="50px" />';
+			$featured_image = wp_get_attachment_url( get_post_thumbnail_id($cur_post));
+			if (!empty($featured_image)) {
+				echo '<img src="'.esc_url($featured_image).'" width="50px" height="50px" />';
 			} else {
 				echo '-';
 			}
@@ -293,10 +291,11 @@ function eepos_lisa_metabox() {
 
 add_action( 'add_meta_boxes_eepos_event', 'eepos_lisa_metabox' );
 
-function eepos_custom_meta_boxes() {
+function eepos_custom_meta_boxes($post_id) {
+	$cur_post_box = get_post($post_id);
 	$location_inf = get_post_meta(get_the_ID(), 'location', true);
 	$room_inf = get_post_meta(get_the_ID(), 'room', true);
-	$image_inf = get_post_meta(get_the_ID(), 'custom_image', true);
+	$featured_image = wp_get_attachment_url( get_post_thumbnail_id($cur_post_box));
 	echo '<label for="eepos_location">Sijainti</label><br>';
 	echo '<input type="text" name="eepos_location" value="' . esc_attr( $location_inf ) . '" />';
 	echo '<br><label for="eepos_room">Huone</label><br>';
@@ -304,10 +303,8 @@ function eepos_custom_meta_boxes() {
 	echo '<br><label for="custom_image">Kuva</label><br>';
 	echo '<input type="file" name="custom_image" value="" />';
 	echo '<input type="hidden" id="custom_image_manual_flag" name="custom_image_manual_flag" value="true" /><br>';
-	if ( !empty($image_inf) ) {
-		$existing_eepos_image = wp_get_attachment_image_src( $image_inf );
-		$existing_eepos_image_url = $existing_eepos_image[0];
-		echo '<img src="'.esc_url($existing_eepos_image_url).'" width="200px" height="200px" />';
+	if ( !empty($featured_image) ) {
+		echo '<img src="'.esc_url($featured_image).'" width="200px" height="200px" />';
 	}
 }
 
@@ -353,17 +350,12 @@ function eepos_edit_save_image($post_id) {
 								);
 
 								$attach_id = wp_insert_attachment( $attachments, $file_name_and_location, $post_id );
-								require_once(ABSPATH . "wp-admin" . '/includes/image.php');
-								$attach_data = wp_generate_attachment_metadata( $attach_id, $file_name_and_location );
-								wp_update_attachment_metadata($attach_id, $attach_data);
-
-								$existing_upload_image = (int) get_post_meta($post_id, 'custom_image', true);
-
-								if (is_numeric($existing_upload_image)) {
-									wp_delete_attachment($existing_upload_image);
+								if (!is_wp_error($attach_id)) {
+									require_once(ABSPATH . "wp-admin" . '/includes/image.php');
+									$attach_data = wp_generate_attachment_metadata( $attach_id, $file_name_and_location );
+									wp_update_attachment_metadata($attach_id, $attach_data);
 								}
-
-								update_post_meta($post_id, 'custom_image', $attach_id);
+								set_post_thumbnail ( $post_id, $attach_id );
 
 								$upload_feedback = false;
 							} else {
