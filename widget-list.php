@@ -56,12 +56,14 @@ class EeposEventsListWidget extends WP_Widget {
 			ORDER BY startDateMeta.meta_value ASC, startTimeMeta.meta_value ASC
 		", $termIds && count($termIds) ? $termIds : [] );
 		$posts = $wpdb->get_results( $query );
+		// Query muutettu näyttämään VAIN tämän päivän ja/tai uudemmat tapahtumat, ennen tässä näkyi kanssa 2 viikkoa vanhemmat kuin nykyinen päivä
 		return array_map( function ( $p ) {
 			return $p->ID;
 		}, $posts );
 	}
 
 	public function widget( $args, $instance ) {
+		// Jostain syystä jos "$args" poistetaan function kutsusta, plugin ei toimi
 		$title              = apply_filters( 'widget_title', $instance['title'] ?? '' );
 		$restrictToCategory = $instance['restrict_to_category'] ?? null;
 
@@ -126,8 +128,6 @@ class EeposEventsListWidget extends WP_Widget {
 							$startTime = DateTime::createFromFormat('H:i:s', $post->meta['event_start_time'][0]);
 							$formattedStartTime = date_i18n( 'G.i', $startTime->format('U') );
 
-							$content = apply_filters('the_content', $post->post_content);
-
 							$location = $post->meta['location'][0];
 							$building = get_post_meta($post->ID, 'building', true);
 							$floor = get_post_meta($post->ID, 'floor', true);
@@ -167,9 +167,6 @@ class EeposEventsListWidget extends WP_Widget {
 										<?php } ?>
 									</div>
 									<div class="description">
-										<?php if (!empty($content)) { ?>
-											<span>Kuvaus: <?= $content ?></span>
-										<?php } ?>
 										<span><img src="<?= esc_url($imageUrl) ?>" /></span>
 									</div>
 								</div>

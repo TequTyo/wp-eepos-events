@@ -9,7 +9,6 @@ function eepos_events_define_event_list_columns() {
 		'event_category' => 'Kategoria',
 		'event_location' => 'Sijainti',
 		'event_room'     => 'Huone',
-		'event_desc'     => 'Kuvaus',
 		'event_date'     => 'Pvm',
 		'event_image'    => 'Kuva',
 	];
@@ -63,18 +62,9 @@ function eepos_events_get_event_list_column_values( $column, $post_id ) {
 				echo '-';
 			}
 			break;
-		case 'event_desc':
-			$post_cont = apply_filters('post_cont', $cur_post->post_content);
-
-			if ( !empty($post_cont)) {
-				echo $post_cont;
-			} else {
-				echo '-';
-			}
-			break;
 		case 'event_image':
 			$featured_image = wp_get_attachment_url( get_post_thumbnail_id($cur_post));
-			if (!empty($featured_image)) {
+			if ( !empty($featured_image) ) {
 				echo '<img src="'.esc_url($featured_image).'" width="50px" height="50px" />';
 			} else {
 				echo '-';
