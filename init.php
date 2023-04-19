@@ -60,3 +60,27 @@ wp_register_style('template-css', plugins_url('wp-eepos-events/templates/event.c
 add_action( 'init', 'eepos_events_start_session', 1 );
 add_action( 'init', 'eepos_events_register_post_type' );
 add_action( 'init', 'eepos_events_register_taxonomy' );
+
+// Elementor dynamic tag specifications
+
+function register_new_dynamic_tag_group( $dynamic_tags_manager ) {
+
+	$dynamic_tags_manager->register_group(
+		'eepos_group',
+		[
+			'title' => esc_html__( 'Eepos event', 'textdomain' )
+		]
+	);
+}
+
+add_action( 'elementor/dynamic_tags/register', 'register_new_dynamic_tag_group' );
+
+function register_eepos_variable_dynamic_tag( $dynamic_tags_manager ) {
+	require_once( __DIR__ . '/dynamic-tags/eepos_variable_dynamic_tag_date.php' );
+	require_once( __DIR__ . '/dynamic-tags/eepos_variable_dynamic_tag_location.php' );
+
+	$dynamic_tags_manager->register( new Elementor_Dynamic_Tag_Eepos_Variable_Tag_1 );
+	$dynamic_tags_manager->register( new Elementor_Dynamic_Tag_Eepos_Variable_Tag_2 );
+}
+
+add_action( 'elementor/dynamic_tags/register', 'register_eepos_variable_dynamic_tag' );
